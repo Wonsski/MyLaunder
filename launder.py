@@ -1,17 +1,36 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.keys import Keys
 import time
 from datetime import datetime
 import os
+import argparse
 
+
+class Colors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    STATUS = '\033[92m'
+    UPDATE = '\033[93m'
+    ENDC = '\033[0m'
 
 class XMRWallet:
-    def __init__(self, logfile=f"logs/launder_logs_{int(time.time())}.log", create_wallet=True):
+    def __init__(self, logfile=f"logs/launder_logs_{int(time.time())}.log", create_wallet=True,headless=False):
         self.address = ""
         self.mnemonic_phrase = ""
         self.xmr_balance = ""
         self.logfile = logfile
         self.url = "https://wallet.mymonero.com/"
+        self.headless = headless
+        self.options = webdriver.FirefoxOptions()
+
+        if(headless):
+            self.options.add_argument('--headless')
+            self.options.add_argument("--width=1920")
+            self.options.add_argument("--height=1080")
 
         if(create_wallet):
             self._createWallet()
@@ -35,38 +54,49 @@ class XMRWallet:
         if second<10: 
             second='0'+str(second)
 
-        print(f"[*][{hour}:{minute}:{second}] {message}")
+        print(f"{Colors.STATUS}[INFO]{Colors.ENDC} {Colors.OKCYAN}[{hour}:{minute}:{second}]{Colors.ENDC} {message}")
 
     def _createWallet(self):
-        self._printStatus("Creating new XMR wallet...")
+        self._printStatus(f"Creating new XMR wallet...")
         
-        driver = webdriver.Firefox()
+        driver = webdriver.Firefox(options=self.options)
+        wait = WebDriverWait(driver, 120)
 
         driver.get(self.url)
         time.sleep(3)
         
         #Create new wallet option
-        driver.find_element(By.XPATH,"/html/body/div/div[1]/div[2]/div/div[2]/div/div[1]/div[2]/a[2]").click()
+        elem = wait.until(EC.element_to_be_clickable((By.XPATH, "/html/body/div/div[1]/div[2]/div/div[2]/div/div[1]/div[2]/a[2]")))
+        elem.click()
+        time.sleep(1)
 
         #Accept instruction
-        driver.find_element(By.XPATH,"/html/body/div/div[1]/div[2]/div/div[3]/div[2]/div/div[3]/a").click()
+        elem = wait.until(EC.element_to_be_clickable((By.XPATH, "/html/body/div/div[1]/div[2]/div/div[3]/div[2]/div/div[3]/a")))
+        elem.click()
+        time.sleep(1)
 
         #Go next
-        driver.find_element(By.XPATH,"/html/body/div/div[1]/div[2]/div/div[3]/div[1]/div[3]/div").click()
+        elem = wait.until(EC.element_to_be_clickable((By.XPATH, "/html/body/div/div[1]/div[2]/div/div[3]/div[1]/div[3]/div")))
+        elem.click()
+        time.sleep(1)
+
 
         #Mnemonic phrase
-        mnemonic_phrase_webelem = driver.find_element(By.CLASS_NAME,"mnemonic-container")
+        mnemonic_phrase_webelem = wait.until(EC.presence_of_element_located((By.CLASS_NAME,"mnemonic-container")))
 
         self.mnemonic_phrase = mnemonic_phrase_webelem.text
 
         mnemonic_phrase_list = self.mnemonic_phrase.split()
-        time.sleep(3)
-        
+     
         #Go next
-        driver.find_element(By.XPATH,"/html/body/div/div[1]/div[2]/div/div[3]/div[1]/div[3]/div").click()
+        time.sleep(5) #page delay for mnemonic phrase save
+        elem = wait.until(EC.element_to_be_clickable((By.XPATH, "/html/body/div/div[1]/div[2]/div/div[3]/div[1]/div[3]/div")))
+        elem.click()
+        time.sleep(1)
 
         #Verify mnemonic phrase
-        word_puzzles = driver.find_elements(By.CLASS_NAME,"mnemonic-pill")
+        word_puzzles = wait.until(EC.presence_of_all_elements_located((By.CLASS_NAME,"mnemonic-pill")))
+        time.sleep(2)
 
         for i in range(len(word_puzzles)):
             word = mnemonic_phrase_list[i]
@@ -76,17 +106,23 @@ class XMRWallet:
                     puzzle.click()
                     time.sleep(0.1)
                     break
+        
+        time.sleep(1)
 
         #Finish
-        driver.find_element(By.XPATH,"/html/body/div/div[1]/div[2]/div/div[3]/div[1]/div[3]/div").click()
-        time.sleep(2)
+        elem = wait.until(EC.element_to_be_clickable((By.XPATH, "/html/body/div/div[1]/div[2]/div/div[3]/div[1]/div[3]/div")))
+        elem.click()
+        time.sleep(1)
 
         #Access Wallet
-        driver.find_element(By.XPATH,"/html/body/div/div[1]/div[2]/div/div[2]/div/div[2]/div/div[1]").click()
+        elem = wait.until(EC.element_to_be_clickable((By.XPATH, "/html/body/div/div[1]/div[2]/div/div[2]/div/div[2]/div/div[1]")))
+        elem.click()
         time.sleep(2)
-
-        self.address = driver.find_element(By.XPATH,"/html/body/div/div[1]/div[2]/div/div[2]/div/div[2]/div/div[1]/div/span[2]").text
-        self.xmr_balance = driver.find_element(By.XPATH,"/html/body/div/div[1]/div[2]/div/div[2]/div/div[1]/span[2]").text
+        
+        elem=wait.until(EC.presence_of_element_located((By.XPATH,"/html/body/div/div[1]/div[2]/div/div[2]/div/div[2]/div/div[1]/div/span[2]")))
+        self.address = elem.text
+        elem=wait.until(EC.presence_of_element_located((By.XPATH,"/html/body/div/div[1]/div[2]/div/div[2]/div/div[1]/span[2]")))
+        self.xmr_balance = elem.text
 
         self._printStatus(f"Created wallet (xmr_address: {self.address})(More details in {self.logfile})")
 
@@ -101,42 +137,60 @@ class XMRWallet:
         driver.close()
 
     def _accessWallet(self, driver):
+
+        self._printStatus(f"Accessing wallet... ({self.address})")
         
         driver.get(self.url)
-        time.sleep(5)
+        time.sleep(3)
+        wait = WebDriverWait(driver, 120)
         
          #Create new wallet option
-        driver.find_element(By.XPATH,"/html/body/div/div[1]/div[2]/div/div[2]/div/div[1]/div[2]/a[1]").click()
-
-        #Textarea
-        textarea = driver.find_element(By.XPATH,"/html/body/div/div[1]/div[2]/div/div[3]/div[2]/div/div[2]/div[1]/textarea")
-        textarea.clear()
-        textarea.send_keys(self.mnemonic_phrase)
+        elem = wait.until(EC.element_to_be_clickable((By.XPATH, "/html/body/div/div[1]/div[2]/div/div[2]/div/div[1]/div[2]/a[1]")))
+        elem.click()
         time.sleep(1)
 
+        #Textarea
+        textarea = wait.until(EC.presence_of_element_located((By.XPATH,"/html/body/div/div[1]/div[2]/div/div[3]/div[2]/div/div[2]/div[1]/textarea")))
+        textarea.clear()
+        textarea.send_keys(self.mnemonic_phrase)
+        time.sleep(3)
+
         #Finish
-        driver.find_element(By.XPATH,"/html/body/div/div[1]/div[2]/div/div[3]/div[1]/div[3]/div").click()
-        time.sleep(2)
-
-    def updateWalletBalance(self):
-        
-        self._printStatus(f"Updating wallet balance ({self.address})")
-
-        driver = webdriver.Firefox()
-        self._accessWallet(driver)
+        elem = wait.until(EC.element_to_be_clickable((By.XPATH,"/html/body/div/div[1]/div[2]/div/div[3]/div[1]/div[3]/div")))
+        time.sleep(1)
+        elem.click()
+        time.sleep(1)
 
         #Access Wallet
-        driver.find_element(By.XPATH,"/html/body/div/div[1]/div[2]/div/div[2]/div/div[2]/div/div[1]").click()
-        time.sleep(2)
+        elem = wait.until(EC.element_to_be_clickable((By.XPATH,"/html/body/div/div[1]/div[2]/div/div[2]/div/div[2]/div/div[1]")))
+        time.sleep(1)
+        driver.execute_script("arguments[0].click();", elem)
+        time.sleep(7)
+
+    def updateWalletBalance(self):
+
+        driver = webdriver.Firefox(options=self.options)
+        self._accessWallet(driver)
+        wait = WebDriverWait(driver, 120)
+
+        self._printStatus(f"Updating wallet balance ({self.address})")
+
+        time.sleep(4)
 
         try:
-            self.xmr_balance = driver.find_element(By.XPATH,'//*[@id="stack-view-stage-view"]/div/div[1]/span[1]').text
+            elem = wait.until(EC.presence_of_element_located((By.XPATH,'//*[@id="stack-view-stage-view"]/div/div[1]/span[1]')))
+            self.xmr_balance = elem.text
         except:
-            self.xmr_balance = driver.find_element(By.XPATH,"/html/body/div/div[1]/div[2]/div/div[2]/div/div[1]/span[2]").text
+            elem = wait.until(EC.presence_of_element_located((By.XPATH,"/html/body/div/div[1]/div[2]/div/div[2]/div/div[1]/span[2]")))
+            self.xmr_balance = elem.text
 
-        pending = driver.find_element(By.XPATH,"/html/body/div/div[1]/div[2]/div/div[2]/div/span").text
+        time.sleep(4)
+
+        elem = wait.until(EC.presence_of_element_located((By.XPATH,"/html/body/div/div[1]/div[2]/div/div[2]/div/span")))
+        pending = elem.text
         if("pending" in pending):
             self.xmr_balance=0
+            self._printStatus(f"{Colors.UPDATE}XMR is pending ({pending}){Colors.ENDC}")
 
         #Save logs
         self._saveToLogFile(f"""
@@ -149,7 +203,6 @@ class XMRWallet:
 
     def sendXMR(self,destination_address):
 
-        self._printStatus(f"Sending XMR\n - from: {self.address}\n - to: {destination_address}")
 
         self._saveToLogFile(f"""
         [WALLET PAYMENT REQUEST][{datetime.now()}]
@@ -157,29 +210,48 @@ class XMRWallet:
         To: {destination_address}
         """)
 
-        driver = webdriver.Firefox()
+        driver = webdriver.Firefox(options=self.options)
+        wait = WebDriverWait(driver, 120)
         self._accessWallet(driver)
 
+        self._printStatus(f"Sending XMR\n - from: {self.address}\n - to: {destination_address}")
+
         #Go to send page
-        driver.find_element(By.XPATH,'//*[@id="tabButton-send"]').click()
+        time.sleep(1)
+        elem = wait.until(EC.element_to_be_clickable((By.XPATH,"/html/body/div/div[1]/div[1]/a[2]")))
+        time.sleep(2)
+        elem.click()
+        time.sleep(1)
         
         #Click max
-        driver.find_element(By.XPATH,'//*[@id="stack-view-stage-view"]/div/div[2]/table/tr/td/div/a').click()
+        elem = wait.until(EC.element_to_be_clickable((By.XPATH,'//*[@id="stack-view-stage-view"]/div/div[2]/table/tr/td/div/a')))
+        time.sleep(0.5)
+        elem.click()
+        time.sleep(1)
 
         #Enter address
-        driver.find_element(By.XPATH,"/html/body/div[1]/div[1]/div[2]/div/div[2]/div/div[2]/div[2]/div[1]/input").send_keys(destination_address)
+        elem = wait.until(EC.presence_of_element_located((By.XPATH,"/html/body/div[1]/div[1]/div[2]/div/div[2]/div/div[2]/div[2]/div[1]/input")))
+        elem.send_keys(destination_address)
 
-        transaction_value = driver.find_element(By.XPATH,"/html/body/div/div[1]/div[2]/div/div[2]/div/div[2]/table/tr/td/div/input").get_attribute('value')
+        time.sleep(2)
+
+        elem = wait.until(EC.presence_of_element_located((By.XPATH,"/html/body/div/div[1]/div[2]/div/div[2]/div/div[2]/table/tr/td/div/input")))
+        time.sleep(0.5)
+        transaction_value = elem.get_attribute('value')
+
+        time.sleep(2)
 
         #Send XMR
         try:
-            time.sleep(1)
-            driver.find_element(By.XPATH,"/html/body/div/div[1]/div[2]/div/div[1]/div[3]/div").click()
+            elem = wait.until(EC.element_to_be_clickable((By.XPATH,"/html/body/div/div[1]/div[2]/div/div[1]/div[3]/div")))
+            time.sleep(0.5)
+            elem.click()
+
             self._saveToLogFile(f"""
-             [WALLET PAYMENT SUCCESS][{datetime.now()}]
-             From: {self.address}
-             To: {destination_address}
-             Amount: {transaction_value}
+              [WALLET PAYMENT SUCCESS][{datetime.now()}]
+              From: {self.address}
+              To: {destination_address}
+              Amount: {transaction_value}
             """)
         except:
             print(f"[!][ERROR] Something gone wrong with XMR transaction. Details: {self.logfile}")
@@ -194,58 +266,76 @@ class XMRWallet:
             - Last known XMR balance: {self.xmr_balance}
             """)
 
-        time.sleep(5)
+        self._printStatus(f"{Colors.HEADER}[TRANSCACTION]{Colors.ENDC} Sent XMR\n - from: {self.address}\n - to: {destination_address}")
+        time.sleep(6)
         driver.close()
 
-if(__name__=="__main__"):
-    destination_wallet_address = input("Input destination wallet address: ")
-    wallet_amount = int(input("Input wallet amount to generate: "))
 
-    use_existing = input("Do you wanna use existing wallet? y/n: ")
+
+
+if(__name__=="__main__"):
+    os.system('cls' if os.name == 'nt' else 'clear')
+
+    parser = argparse.ArgumentParser(
+                    prog = 'MyMonero Launder',
+                    description = 'Selenium bases python script to auto-generate new XMR wallets and transfer crypro between them',
+                    epilog = 'Author: Radoslaw Rajda')
+    
+    parser.add_argument('destinationWallet', help='The last wallet where XMR will be sent')
+    parser.add_argument('walletAmount', help='Amount of wallets to generate',type=int) 
+    parser.add_argument('-delay', help='How often to refresh your wallet account balance? (Default 300 seconds)',default=300) 
+    parser.add_argument('--mnemonic',dest='startFromExistingWallet', help='Do you wanna use existing XMR starting wallet',action='store_true') 
+    parser.add_argument('--headless',dest='headlessMode', help='Run selenium in headless mode',action='store_true') 
+
+    args = parser.parse_args()
 
     logfile=f"logs/launder_logs_{int(time.time())}.log"
 
-    if(use_existing=='y'):
+    if(args.headlessMode):
+            print(f"{Colors.UPDATE}Running in headless mode{Colors.ENDC}")
+
+    if(args.startFromExistingWallet):
         mnemonic = input("Input mnemonic phrase: ")
+        os.system('cls' if os.name == 'nt' else 'clear')
 
-        wallet = XMRWallet(logfile=logfile, create_wallet=False)
+        wallet = XMRWallet(logfile=logfile, create_wallet=False, headless=args.headlessMode)
         wallet.mnemonic_phrase = mnemonic
-        delay=1
+        wallet.address = "User address"
     else:
-        wallet = XMRWallet(logfile=logfile)
-        delay=900
-    
-    print("\n\n")
-    print(25*'-')
-    print(f"\nSend XMR to address: {wallet.address}\n")
-    print(25*'-')
-    print(f"[*] Payment delay: {delay} seconds")
-    
-    while True:
-        time.sleep(delay)
-        wallet.updateWalletBalance()
+        wallet = XMRWallet(logfile=logfile, headless=args.headlessMode)
 
-        if float(wallet.xmr_balance)>0:
-            print(f"XMR received at {datetime.now()}")
-            break
-        delay=900
+        delay=args.delay
 
-    for i in range(wallet_amount):
-        print(f"[{i+1}] wallet")
-        next_wallet = XMRWallet(logfile=logfile)
+        os.system('cls' if os.name == 'nt' else 'clear')
+        print(f"\nSend XMR to address: {wallet.address}\n\n")
+        print(f"[*] Payment delay: {delay} seconds")
+        
+        while True:
+            time.sleep(delay)
+            wallet.updateWalletBalance()
+
+            if float(wallet.xmr_balance)>0:
+                print(f"{Colors.STATUS}XMR received at {datetime.now()}{Colors.ENDC}")
+                break
+
+    for i in range(args.walletAmount):
+
+        print(f"{Colors.HEADER}[NEW WALLET]{Colors.ENDC} [{Colors.OKBLUE}Num: {i+1}{Colors.ENDC}]")
+        next_wallet = XMRWallet(logfile=logfile,headless=args.headlessMode)
 
         wallet.sendXMR(next_wallet.address)
 
-        print("[*] Waiting for XMR to receive (15min refresh)")
+        print(f"{Colors.STATUS}[INFO]{Colors.ENDC} Waiting for XMR to receive ({args.delay} seconds refresh)")
 
         while True:
-            time.sleep(900)
+            time.sleep(args.delay)
             next_wallet.updateWalletBalance()
 
             if float(next_wallet.xmr_balance)>0:
-                print(f"XMR received at {datetime.now()}")
+                print(f"{Colors.STATUS}XMR received at {datetime.now()}{Colors.ENDC}")
                 break
         
         wallet = next_wallet
 
-    next_wallet.sendXMR(destination_wallet_address)
+
+    wallet.sendXMR(args.destinationWallet)
