@@ -68,16 +68,19 @@ class XMRWallet:
         
         #Create new wallet option
         elem = wait.until(EC.element_to_be_clickable((By.XPATH, "/html/body/div/div[1]/div[2]/div/div[2]/div/div[1]/div[2]/a[2]")))
+        time.sleep(0.5)
         elem.click()
         time.sleep(1)
 
         #Accept instruction
         elem = wait.until(EC.element_to_be_clickable((By.XPATH, "/html/body/div/div[1]/div[2]/div/div[3]/div[2]/div/div[3]/a")))
+        time.sleep(0.5)
         elem.click()
         time.sleep(1)
 
         #Go next
         elem = wait.until(EC.element_to_be_clickable((By.XPATH, "/html/body/div/div[1]/div[2]/div/div[3]/div[1]/div[3]/div")))
+        time.sleep(0.5)
         elem.click()
         time.sleep(1)
 
@@ -92,6 +95,7 @@ class XMRWallet:
         #Go next
         time.sleep(5) #page delay for mnemonic phrase save
         elem = wait.until(EC.element_to_be_clickable((By.XPATH, "/html/body/div/div[1]/div[2]/div/div[3]/div[1]/div[3]/div")))
+        time.sleep(0.5)
         elem.click()
         time.sleep(1)
 
@@ -112,11 +116,13 @@ class XMRWallet:
 
         #Finish
         elem = wait.until(EC.element_to_be_clickable((By.XPATH, "/html/body/div/div[1]/div[2]/div/div[3]/div[1]/div[3]/div")))
+        time.sleep(0.5)
         elem.click()
         time.sleep(1)
 
         #Access Wallet
         elem = wait.until(EC.element_to_be_clickable((By.XPATH, "/html/body/div/div[1]/div[2]/div/div[2]/div/div[2]/div/div[1]")))
+        time.sleep(0.5)
         elem.click()
         time.sleep(2)
         
@@ -125,7 +131,9 @@ class XMRWallet:
         elem=wait.until(EC.presence_of_element_located((By.XPATH,"/html/body/div/div[1]/div[2]/div/div[2]/div/div[1]/span[2]")))
         self.xmr_balance = elem.text
 
-        self._printStatus(f"Created wallet (xmr_address: {self.address})(More details in {self.logfile})")
+        self._printStatus(f"Created wallet {Colors.GRAY}(xmr_address: {self.address})\n(Saved mnemonic in {self.logfile}){Colors.ENDC}")
+
+        time.sleep(1)
 
         #Save logs
         self._saveToLogFile(f"""

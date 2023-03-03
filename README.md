@@ -24,6 +24,9 @@ Firefox geckodriver needs to be installed.
 <br>
 
 ### Usage
+
+<p align='center'><img src='docs/working.gif'></p>
+
 ```
 $ python3 launder.py -h
 
@@ -55,6 +58,13 @@ python3 launder.py [XMR address] 2 --mnemonic  # Using mnemonic phrase
 
 Input mnemonic phrase: ...
 ```
+
+<br>
+
+### Screenshots
+
+![MyLaunder screenshot2](docs/screenshot2.png)
+![MyLaunder screenshot3](docs/screenshot3.png)
 
 <br>
 Author: Radoslaw Rajda
