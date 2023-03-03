@@ -1,6 +1,6 @@
 # MyMonero-Launder
 
-![MyLaunder screenshot](docs/screenshot.png)
+![MyLaunder screenshot](screenshot.png)
 
 
 ## MyMonero-Launer (MyLaunder) is a tool based on Selenium and [MyMonero Wallet](https://wallet.mymonero.com/) to automatically generate multiple XMR wallets and exchange XMR between them and send it to the destination monero address.

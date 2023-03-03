@@ -15,6 +15,7 @@ class Colors:
     OKCYAN = '\033[96m'
     STATUS = '\033[92m'
     UPDATE = '\033[93m'
+    GRAY = '\33[90m'
     ENDC = '\033[0m'
 
 class XMRWallet:
@@ -138,7 +139,7 @@ class XMRWallet:
 
     def _accessWallet(self, driver):
 
-        self._printStatus(f"Accessing wallet... ({self.address})")
+        self._printStatus(f"Accessing wallet... {Colors.GRAY}({self.address}){Colors.ENDC}")
         
         driver.get(self.url)
         time.sleep(3)
@@ -173,7 +174,7 @@ class XMRWallet:
         self._accessWallet(driver)
         wait = WebDriverWait(driver, 120)
 
-        self._printStatus(f"Updating wallet balance ({self.address})")
+        self._printStatus(f"Updating wallet balance {Colors.GRAY}({self.address}){Colors.ENDC}")
 
         time.sleep(4)
 
@@ -266,7 +267,7 @@ class XMRWallet:
             - Last known XMR balance: {self.xmr_balance}
             """)
 
-        self._printStatus(f"{Colors.HEADER}[TRANSCACTION]{Colors.ENDC} Sent XMR\n - from: {self.address}\n - to: {destination_address}")
+        self._printStatus(f"{Colors.HEADER}[TRANSACTION]{Colors.ENDC} Sent XMR\n - from: {self.address}\n - to: {destination_address}")
         time.sleep(6)
         driver.close()
 
@@ -278,13 +279,13 @@ if(__name__=="__main__"):
 
     parser = argparse.ArgumentParser(
                     prog = 'MyMonero Launder',
-                    description = 'Selenium bases python script to auto-generate new XMR wallets and transfer crypro between them',
+                    description = 'Selenium based python script to auto-generate new XMR wallets and transfer crypto between them',
                     epilog = 'Author: Radoslaw Rajda')
     
     parser.add_argument('destinationWallet', help='The last wallet where XMR will be sent')
     parser.add_argument('walletAmount', help='Amount of wallets to generate',type=int) 
     parser.add_argument('-delay', help='How often to refresh your wallet account balance? (Default 300 seconds)',default=300) 
-    parser.add_argument('--mnemonic',dest='startFromExistingWallet', help='Do you wanna use existing XMR starting wallet',action='store_true') 
+    parser.add_argument('--mnemonic',dest='startFromExistingWallet', help='Use existing XMR starting wallet',action='store_true') 
     parser.add_argument('--headless',dest='headlessMode', help='Run selenium in headless mode',action='store_true') 
 
     args = parser.parse_args()
