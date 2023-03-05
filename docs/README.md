@@ -16,7 +16,7 @@ MyLaunder is currently being improved.
 
 ### Installing requirements
 ```
-pip3 install requirements.txt
+pip3 install -r requirements.txt
 ```
 
 Firefox geckodriver needs to be installed.
